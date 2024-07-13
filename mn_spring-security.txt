@@ -1,0 +1,6 @@
+docker run --detach --env MYSQL_ROOT_PASSWORD=efforts007 --env MYSQL_USER=admin --env MYSQL_PASSWORD=efforts007 --env MYSQL_DATABASE=eazybank --name mysql --publish 3306:3306 mysql:8-oracle
+
+msqlsh
+\connect admin@localhost:3306
+\sql
+use eazybank;
