@@ -4,3 +4,110 @@ msqlsh
 \connect admin@localhost:3306
 \sql
 use eazybank;
+
+why default username is user?
+SecurityProperties --> User - [private String name = "user";]
+                            - [private String password = UUID.randomUUID().toString();]  
+							
+							
+How to findout that what properties need to add in properties file for userdefined credentials?
+SecurityProperties - [@ConfigurationProperties(prefix = "spring.security")];
+SecurityProperties --> User <=> "user"
+spring.security.user.name=
+spring.security.user.password=
+
+> Same we can confirm from spring documentation:
+spring.io > Projects > Spring Boot > LEARN - 'Reference Doc'>[Spring Boot] > Appendix - 
+'Common Application Properties' > Security Properties 
+							
+How spring security knows that now we don't need to generate default password if user configured
+in properties files?
+SecurityProperties --> User - public boolean isPasswordGenerated() {
+			                    return this.passwordGenerated;
+		                      }							
+							  
+							  
+================================================================
+How Spring security internal flow:
+=======================================START=========================================
+
+AuthorizationFilter.java 
+DefaultLoginPageGeneratingFilter.java
+AbstractAuthenticationProcessingFilter.java -> (abstract class)
+UsernamePasswordAuthenticationFilter.java -> (implementation of above)-> public Authentication 
+attemptAuthentication(HttpServletRequest request, HttpServletResponse response)			
+
+Authentication -> (Interface)
+UsernamePasswordAuthenticationToken -> (Implementation) >> unauthenticated(username,password);
+>> setAuthentication(false)
+
+
+AuthenticationManager -> (Interface)
+ProviderManager -> (Implementaion)
+>> public Authentication authenticate(Authentication authentication) throws AuthenticationException
+    >>for (AuthenticationProvider provider : getProviders())//loop all the available authentication providers .
+
+in our case default authentication provider is:: DaoAuthenticationProvider.java
+breakpoint[public abstract class AbstractUserDetailsAuthenticationProvider
+		implements AuthenticationProvider, InitializingBean, MessageSourceAware {]
+>>@Override
+	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+
+Now authentication provider try to get the User details from the  UserDetailsManger/UserDetailsService from the
+storage system and once the Userdetails are loaded then it going to take the help of password encoder to validate 
+the password matching.
+
+@Override
+	protected final UserDetails retrieveUser(String username, UsernamePasswordAuthenticationToken authentication)
+			throws AuthenticationException {//inside DaoAuthenticationProvider.java
+...		
+try {
+			UserDetails loadedUser = this.getUserDetailsService().loadUserByUsername(username);		
+
+>>
+   @Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		UserDetails user = this.users.get(username.toLowerCase());
+		if (user == null) {
+			throw new UsernameNotFoundException(username);
+		}
+		return new User(user.getUsername(), user.getPassword(), user.isEnabled(), user.isAccountNonExpired(),
+				user.isCredentialsNonExpired(), user.isAccountNonLocked(), user.getAuthorities());
+	}// inside public class InMemoryUserDetailsManager implements UserDetailsManager, UserDetailsPasswordService {			
+
+<<
+Now Authentication provider take the help of passsord encoder::
+//inside AbstractUserDetailsAuthenticationProvider.java
+additionalAuthenticationChecks(user, (UsernamePasswordAuthenticationToken) authentication);
+
+>> 
+// inside DaoAuthenticationProvider
+@Override
+	@SuppressWarnings("deprecation")
+	protected void additionalAuthenticationChecks(UserDetails userDetails,
+			UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
+...
+String presentedPassword = authentication.getCredentials().toString();
+		if (!this.passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {//pwd that loaded from sorage
+			this.logger.debug("Failed to authenticate since password does not match stored value");
+			throw new BadCredentialsException(this.messages
+				.getMessage("AbstractUserDetailsAuthenticationProvider.badCredentials", "Bad credentials"));
+		}			
+<<
+Now if you try to release the breakpoints then you'll see our secured API message.
+And now this time if we refresh than not all the Authentication provider classes are invoked because
+Authenticatin information is now stored in SecurityContext.
+==============================================THE END=============================================================
+ 
+In order to see the default configuraiton to see inside spring security framework
+SpringBootWebSecurityConfiguration.java >> 
+        @Bean
+		@Order(SecurityProperties.BASIC_AUTH_ORDER)
+		SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+			http.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated());
+			http.formLogin(withDefaults());
+			http.httpBasic(withDefaults());
+			return http.build();
+		}
+
+		

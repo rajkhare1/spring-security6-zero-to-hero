@@ -1,4 +1,4 @@
-package com.rajkhare.springsecsection2.controller;
+package com.rajkhare.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class CardsController {
 
 	@GetMapping("/myCards")
-    public String getCardDetails() {
-        return "Here are the card details from the DB";
-    }
+	public String getCardsDetails() {
+		return "Here are the card details from the DB";
+	}
 }
+ 

@@ -1,4 +1,4 @@
-package com.rajkhare.springsecsection3;
+package com.rajkhare;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

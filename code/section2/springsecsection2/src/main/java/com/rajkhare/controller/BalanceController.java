@@ -1,4 +1,4 @@
-package com.rajkhare.springsecsection3.controller;
+package com.rajkhare.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,3 +11,4 @@ public class BalanceController {
 		return "Here are the balance details from the DB";
 	}
 }
+ 
