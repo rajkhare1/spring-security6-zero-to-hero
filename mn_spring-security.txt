@@ -109,5 +109,7 @@ SpringBootWebSecurityConfiguration.java >>
 			http.httpBasic(withDefaults());
 			return http.build();
 		}
+================
+b4a916a65ae9
 
 		
