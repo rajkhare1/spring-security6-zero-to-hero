@@ -1,5 +1,7 @@
 package com.rajkhare.config;
 
+import com.rajkhare.model.Customer;
+import com.rajkhare.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
